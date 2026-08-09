@@ -33,6 +33,8 @@ import {
   resolveJwt,
   type TelemetryEventType,
 } from "@/lib/telemetry";
+import { LudwittAuthBar } from "@/components/LudwittAuthBar";
+import { TriniTutor } from "@/components/TriniTutor";
 
 export default function Home() {
   const [state, dispatch] = useReducer(
@@ -43,6 +45,7 @@ export default function Home() {
   const [jwt, setJwt] = useState<string | null>(null);
   const [eventsLog, setEventsLog] = useState<string[]>([]);
   const [masteryMap, setMasteryMap] = useState<MasteryMap>({});
+  const [authError, setAuthError] = useState<string | null>(null);
   const masteryRef = useRef<MasteryMap>({});
   const summaryPostedRef = useRef<string | null>(null);
   const bankSize = questionBank.length;
@@ -58,6 +61,16 @@ export default function Home() {
   useEffect(() => {
     const token = resolveJwt();
     setJwt(token);
+
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get("auth_error");
+    if (err) setAuthError(err);
+    if (params.has("auth") || params.has("auth_error")) {
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete("auth");
+      clean.searchParams.delete("auth_error");
+      window.history.replaceState({}, "", clean.pathname + clean.search);
+    }
 
     const savedBest = loadBestStreak();
     const savedMastery = loadMasteryMap();
@@ -259,6 +272,8 @@ export default function Home() {
           </span>
         </div>
       </div>
+
+      <LudwittAuthBar authError={authError} />
 
       <div className="max-w-2xl w-full bg-gray-950/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-gray-800/80 my-auto">
         {active && state.phase === "practice" && (
@@ -619,9 +634,10 @@ function ExplanationPanel({
       <p className="text-sm text-gray-300 leading-relaxed mb-4">
         {question.explanation}
       </p>
+      <TriniTutor question={question} />
       <button
         onClick={onContinue}
-        className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition"
+        className="w-full mt-4 bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition"
       >
         Continue
       </button>
